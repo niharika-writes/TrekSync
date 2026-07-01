@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block title %}Approval Pending - TrekSync{% endblock %}
+
+{% block content %}
+<div class="container text-center py-5">
+    <div class="card p-5 shadow-lg border-0 bg-white mx-auto" style="max-width: 600px;">
+        <div class="mb-4">
+            <i class="bi bi-clock-history text-warning" style="font-size: 5rem;"></i>
+        </div>
+        <h1 class="fw-bold text-dark mb-3">Registration Under Review</h1>
+        <p class="lead text-muted mb-4">
+            Hello, <strong class="text-dark">{{ current_user.username }}</strong>! Your Trek Staff registration request is currently pending administrative review.
+        </p>
+        <div class="alert alert-info border-0 rounded-3 mb-4">
+            <i class="bi bi-info-circle-fill me-2"></i> Our team will verify your contact details and qualifications. Please try logging in again later.
+        </div>
+        <div>
+            <a href="{{ url_for('logout') }}" class="btn btn-outline-danger px-4">Logout</a>
+            <a href="{{ url_for('home') }}" class="btn btn-success px-4 ms-2">Back to Home</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

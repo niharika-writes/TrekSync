@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block title %}Register - TrekSync{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="card auth-card shadow-lg bg-white border-0" style="max-width: 500px;">
+        <div class="text-center mb-4">
+            <i class="bi bi-person-plus text-success fs-1"></i>
+            <h2 class="mt-2 fw-bold">Create Account</h2>
+            <p class="text-muted">Join TrekSync to start your adventure</p>
+        </div>
+
+        <form action="{{ url_for('register') }}" method="POST" class="needs-validation" onsubmit="return handleFormSubmit(this);" novalidate>
+            <div class="mb-3">
+                <label for="username" class="form-label fw-semibold">Username</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-light"><i class="bi bi-person text-muted"></i></span>
+                    <input type="text" class="form-control" id="username" name="username" placeholder="Choose a username" required minlength="3">
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label for="email" class="form-label fw-semibold">Email Address</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-light"><i class="bi bi-envelope text-muted"></i></span>
+                    <input type="email" class="form-control" id="email" name="email" placeholder="name@example.com" required>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label for="role" class="form-label fw-semibold">Register As</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-light"><i class="bi bi-tags text-muted"></i></span>
+                    <select class="form-select" id="role" name="role" required onchange="toggleStaffFields()">
+                        <option value="trekker" selected>Trekker (Participant)</option>
+                        <option value="staff">Trek Staff (Guide)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Conditional Staff Fields -->
+            <div class="mb-3 d-none" id="staff-fields">
+                <label for="contact_details" class="form-label fw-semibold">Contact Details / Qualifications</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-light"><i class="bi bi-telephone text-muted"></i></span>
+                    <textarea class="form-control" id="contact_details" name="contact_details" rows="2" placeholder="Phone number, experience, certifications..."></textarea>
+                </div>
+                <div class="form-text">Admin approval is required for Staff accounts before accessing the system.</div>
+            </div>
+
+            <div class="mb-3">
+                <label for="password" class="form-label fw-semibold">Password</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-light"><i class="bi bi-lock text-muted"></i></span>
+                    <input type="password" class="form-control" id="password" name="password" placeholder="Min. 6 characters" required minlength="6">
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label for="confirm_password" class="form-label fw-semibold">Confirm Password</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-light"><i class="bi bi-lock-fill text-muted"></i></span>
+                    <input type="password" class="form-control" id="confirm_password" name="confirm_password" placeholder="Confirm your password" required>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-success w-100 py-2.5 fw-bold mb-3">Register</button>
+        </form>
+
+        <hr class="text-muted">
+
+        <div class="text-center">
+            <p class="mb-0 text-muted">Already have an account? <a href="{{ url_for('login') }}" class="text-success fw-bold text-decoration-none">Sign In here</a></p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function toggleStaffFields() {
+        const roleSelect = document.getElementById('role');
+        const staffFields = document.getElementById('staff-fields');
+        const contactInput = document.getElementById('contact_details');
+        
+        if (roleSelect.value === 'staff') {
+            staffFields.classList.remove('d-none');
+            contactInput.setAttribute('required', 'true');
+        } else {
+            staffFields.classList.add('d-none');
+            contactInput.removeAttribute('required');
+        }
+    }
+    
+    function handleFormSubmit(form) {
+        // Password confirmation validation check
+        const password = document.getElementById('password').value;
+        const confirmPassword = document.getElementById('confirm_password');
+        
+        if (password !== confirmPassword.value) {
+            confirmPassword.setCustomValidity('Passwords do not match');
+        } else {
+            confirmPassword.setCustomValidity('');
+        }
+
+        if (!form.checkValidity()) {
+            form.classList.add('was-validated');
+            return false;
+        }
+        
+        form.classList.add('was-validated');
+        const submitBtn = form.querySelector('button[type="submit"]');
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Registering...';
+        return true;
+    }
+    
+    // Run on load in case browser cached values
+    document.addEventListener("DOMContentLoaded", function() {
+        toggleStaffFields();
+    });
+</script>
+{% endblock %}
