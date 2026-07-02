@@ -177,14 +177,299 @@ def logout():
 
 # Placeholder routes for Milestone 2 testing
 
+from functools import wraps
+
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_authenticated or current_user.role != 'admin':
+            flash('Access denied. Admin role required.', 'error')
+            return redirect(url_for('home'))
+        return f(*args, **kwargs)
+    return decorated_function
+
 @app.route('/admin/dashboard')
 @login_required
+@admin_required
 def admin_dashboard():
-    if current_user.role != 'admin':
-        flash('Access denied.', 'error')
-        return redirect(url_for('home'))
-    # Placeholder response
-    return f"<h1>Admin Dashboard</h1><p>Welcome, {current_user.username}!</p><a href='/logout'>Logout</a>"
+    stats = {
+        'total_treks': Trek.query.count(),
+        'total_trekkers': User.query.filter_by(role='trekker').count(),
+        'total_staff': User.query.filter_by(role='staff').count(),
+        'total_bookings': Booking.query.count()
+    }
+    pending_staff = StaffProfile.query.filter_by(status='pending').all()
+    recent_bookings = Booking.query.order_by(Booking.booking_date.desc()).limit(5).all()
+    
+    return render_template('admin/dashboard.html', stats=stats, pending_staff=pending_staff, recent_bookings=recent_bookings)
+
+@app.route('/admin/staff')
+@login_required
+@admin_required
+def admin_staff():
+    search_query = request.args.get('q', '').strip()
+    filter_status = request.args.get('status', '').strip()
+    
+    query = StaffProfile.query.join(User)
+    
+    if search_query:
+        # Search by staff username or ID
+        if search_query.isdigit():
+            query = query.filter((User.username.like(f"%{search_query}%")) | (StaffProfile.id == int(search_query)))
+        else:
+            query = query.filter(User.username.like(f"%{search_query}%"))
+            
+    if filter_status:
+        query = query.filter(StaffProfile.status == filter_status)
+        
+    staff_profiles = query.all()
+    return render_template('admin/staff.html', staff_profiles=staff_profiles, search_query=search_query, filter_status=filter_status)
+
+@app.route('/admin/staff/approve/<int:profile_id>', methods=['POST'])
+@login_required
+@admin_required
+def admin_approve_staff(profile_id):
+    profile = StaffProfile.query.get_or_404(profile_id)
+    profile.status = 'approved'
+    profile.user.is_active = True
+    profile.user.is_blacklisted = False
+    db.session.commit()
+    flash(f'Staff member {profile.user.username} approved successfully.', 'success')
+    return redirect(request.referrer or url_for('admin_staff'))
+
+@app.route('/admin/staff/blacklist/<int:profile_id>', methods=['POST'])
+@login_required
+@admin_required
+def admin_blacklist_staff(profile_id):
+    profile = StaffProfile.query.get_or_404(profile_id)
+    profile.status = 'blacklisted'
+    profile.user.is_blacklisted = True
+    db.session.commit()
+    flash(f'Staff member {profile.user.username} has been blacklisted.', 'success')
+    return redirect(request.referrer or url_for('admin_staff'))
+
+@app.route('/admin/users')
+@login_required
+@admin_required
+def admin_users():
+    search_query = request.args.get('q', '').strip()
+    filter_status = request.args.get('status', '').strip()
+    
+    query = User.query.filter_by(role='trekker')
+    
+    if search_query:
+        if search_query.isdigit():
+            query = query.filter((User.username.like(f"%{search_query}%")) | (User.id == int(search_query)))
+        else:
+            query = query.filter(User.username.like(f"%{search_query}%"))
+            
+    if filter_status == 'active':
+        query = query.filter(User.is_active == True, User.is_blacklisted == False)
+    elif filter_status == 'deactivated':
+        query = query.filter(User.is_active == False, User.is_blacklisted == False)
+    elif filter_status == 'blacklisted':
+        query = query.filter(User.is_blacklisted == True)
+        
+    users = query.all()
+    return render_template('admin/users.html', users=users, search_query=search_query, filter_status=filter_status)
+
+@app.route('/admin/users/toggle_active/<int:user_id>', methods=['POST'])
+@login_required
+@admin_required
+def admin_toggle_user_active(user_id):
+    user = User.query.get_or_404(user_id)
+    user.is_active = not user.is_active
+    db.session.commit()
+    status_str = "activated" if user.is_active else "deactivated"
+    flash(f'User {user.username} has been {status_str}.', 'success')
+    return redirect(request.referrer or url_for('admin_users'))
+
+@app.route('/admin/users/blacklist/<int:user_id>', methods=['POST'])
+@login_required
+@admin_required
+def admin_blacklist_user(user_id):
+    user = User.query.get_or_404(user_id)
+    user.is_blacklisted = True
+    user.is_active = False
+    db.session.commit()
+    flash(f'User {user.username} has been blacklisted.', 'success')
+    return redirect(request.referrer or url_for('admin_users'))
+
+@app.route('/admin/users/unblacklist/<int:user_id>', methods=['POST'])
+@login_required
+@admin_required
+def admin_unblacklist_user(user_id):
+    user = User.query.get_or_404(user_id)
+    user.is_blacklisted = False
+    user.is_active = True
+    db.session.commit()
+    flash(f'User {user.username} unblacklisted successfully.', 'success')
+    return redirect(request.referrer or url_for('admin_users'))
+
+@app.route('/admin/treks')
+@login_required
+@admin_required
+def admin_treks():
+    search_query = request.args.get('q', '').strip()
+    filter_difficulty = request.args.get('difficulty', '').strip()
+    filter_status = request.args.get('status', '').strip()
+    
+    query = Trek.query
+    
+    if search_query:
+        if search_query.isdigit():
+            query = query.filter((Trek.name.like(f"%{search_query}%")) | (Trek.location.like(f"%{search_query}%")) | (Trek.id == int(search_query)))
+        else:
+            query = query.filter((Trek.name.like(f"%{search_query}%")) | (Trek.location.like(f"%{search_query}%")))
+            
+    if filter_difficulty:
+        query = query.filter(Trek.difficulty == filter_difficulty)
+    if filter_status:
+        query = query.filter(Trek.status == filter_status)
+        
+    treks = query.all()
+    return render_template('admin/treks.html', treks=treks, search_query=search_query, filter_difficulty=filter_difficulty, filter_status=filter_status)
+
+@app.route('/admin/treks/create', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def admin_create_trek():
+    approved_staff = StaffProfile.query.filter_by(status='approved').all()
+    
+    if request.method == 'POST':
+        name = request.form.get('name').strip()
+        location = request.form.get('location').strip()
+        difficulty = request.form.get('difficulty')
+        duration = int(request.form.get('duration'))
+        max_slots = int(request.form.get('max_slots'))
+        start_date_str = request.form.get('start_date')
+        end_date_str = request.form.get('end_date')
+        staff_id = request.form.get('staff_id')
+        status = request.form.get('status', 'Pending')
+        
+        # Parse dates
+        try:
+            start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+            end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+        except ValueError:
+            flash('Invalid date format.', 'error')
+            return render_template('admin/trek_form.html', approved_staff=approved_staff, trek=None)
+            
+        if start_date > end_date:
+            flash('Start date cannot be after end date.', 'error')
+            return render_template('admin/trek_form.html', approved_staff=approved_staff, trek=None)
+            
+        # Create Trek
+        trek = Trek(
+            name=name,
+            location=location,
+            difficulty=difficulty,
+            duration=duration,
+            max_slots=max_slots,
+            available_slots=max_slots,  # Initially all slots available
+            status=status,
+            start_date=start_date,
+            end_date=end_date
+        )
+        
+        if staff_id:
+            trek.staff_id = int(staff_id)
+            
+        db.session.add(trek)
+        db.session.commit()
+        
+        flash('Trek route created successfully!', 'success')
+        return redirect(url_for('admin_treks'))
+        
+    return render_template('admin/trek_form.html', approved_staff=approved_staff, trek=None)
+
+@app.route('/admin/treks/edit/<int:trek_id>', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def admin_edit_trek(trek_id):
+    trek = Trek.query.get_or_404(trek_id)
+    approved_staff = StaffProfile.query.filter_by(status='approved').all()
+    
+    if request.method == 'POST':
+        name = request.form.get('name').strip()
+        location = request.form.get('location').strip()
+        difficulty = request.form.get('difficulty')
+        duration = int(request.form.get('duration'))
+        max_slots = int(request.form.get('max_slots'))
+        start_date_str = request.form.get('start_date')
+        end_date_str = request.form.get('end_date')
+        staff_id = request.form.get('staff_id')
+        status = request.form.get('status')
+        
+        # Parse dates
+        try:
+            start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+            end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+        except ValueError:
+            flash('Invalid date format.', 'error')
+            return render_template('admin/trek_form.html', approved_staff=approved_staff, trek=trek)
+            
+        if start_date > end_date:
+            flash('Start date cannot be after end date.', 'error')
+            return render_template('admin/trek_form.html', approved_staff=approved_staff, trek=trek)
+            
+        # Slots adjustment logic
+        active_bookings_count = Booking.query.filter_by(trek_id=trek.id, status='Booked').count()
+        if max_slots < active_bookings_count:
+            flash(f'Cannot set max slots to {max_slots} because there are already {active_bookings_count} active bookings.', 'error')
+            return render_template('admin/trek_form.html', approved_staff=approved_staff, trek=trek)
+            
+        trek.name = name
+        trek.location = location
+        trek.difficulty = difficulty
+        trek.duration = duration
+        trek.max_slots = max_slots
+        trek.available_slots = max_slots - active_bookings_count
+        trek.status = status
+        trek.start_date = start_date
+        trek.end_date = end_date
+        
+        if staff_id:
+            trek.staff_id = int(staff_id)
+        else:
+            trek.staff_id = None
+            
+        db.session.commit()
+        flash('Trek details updated successfully.', 'success')
+        return redirect(url_for('admin_treks'))
+        
+    return render_template('admin/trek_form.html', approved_staff=approved_staff, trek=trek)
+
+@app.route('/admin/treks/delete/<int:trek_id>', methods=['POST'])
+@login_required
+@admin_required
+def admin_delete_trek(trek_id):
+    trek = Trek.query.get_or_404(trek_id)
+    db.session.delete(trek)
+    db.session.commit()
+    flash('Trek route deleted successfully.', 'success')
+    return redirect(url_for('admin_treks'))
+
+@app.route('/admin/bookings')
+@login_required
+@admin_required
+def admin_bookings():
+    search_query = request.args.get('q', '').strip()
+    filter_status = request.args.get('status', '').strip()
+    
+    query = Booking.query.join(User).join(Trek)
+    
+    if search_query:
+        if search_query.isdigit():
+            query = query.filter((User.username.like(f"%{search_query}%")) | (Trek.name.like(f"%{search_query}%")) | (Booking.id == int(search_query)))
+        else:
+            query = query.filter((User.username.like(f"%{search_query}%")) | (Trek.name.like(f"%{search_query}%")))
+            
+    if filter_status:
+        query = query.filter(Booking.status == filter_status)
+        
+    bookings = query.order_by(Booking.booking_date.desc()).all()
+    return render_template('admin/bookings.html', bookings=bookings, search_query=search_query, filter_status=filter_status)
 
 @app.route('/staff/dashboard')
 @login_required
