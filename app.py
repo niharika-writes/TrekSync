@@ -593,10 +593,145 @@ def staff_complete_trek(trek_id):
 @login_required
 def trekker_dashboard():
     if current_user.role != 'trekker':
+        flash('Access denied. Trekker role required.', 'error')
+        return redirect(url_for('home'))
+        
+    search_query = request.args.get('q', '').strip()
+    filter_difficulty = request.args.get('difficulty', '').strip()
+    
+    # Query open treks
+    trek_query = Trek.query.filter_by(status='Open')
+    
+    if search_query:
+        trek_query = trek_query.filter((Trek.name.like(f"%{search_query}%")) | (Trek.location.like(f"%{search_query}%")))
+    if filter_difficulty:
+        trek_query = trek_query.filter(Trek.difficulty == filter_difficulty)
+        
+    treks = trek_query.all()
+    
+    # Get stats for current user
+    active_bookings_count = Booking.query.filter_by(user_id=current_user.id, status='Booked').count()
+    completed_bookings_count = Booking.query.filter_by(user_id=current_user.id, status='Completed').count()
+    
+    # Active booking trek IDs to prevent duplicate booking
+    booked_trek_ids = [b.trek_id for b in Booking.query.filter_by(user_id=current_user.id, status='Booked').all()]
+    
+    return render_template(
+        'trekker/dashboard.html', 
+        treks=treks, 
+        active_bookings_count=active_bookings_count, 
+        completed_bookings_count=completed_bookings_count,
+        booked_trek_ids=booked_trek_ids,
+        search_query=search_query,
+        filter_difficulty=filter_difficulty
+    )
+
+@app.route('/trekker/bookings')
+@login_required
+def trekker_bookings():
+    if current_user.role != 'trekker':
         flash('Access denied.', 'error')
         return redirect(url_for('home'))
-    # Placeholder response
-    return f"<h1>Trekker Dashboard</h1><p>Welcome, {current_user.username}!</p><a href='/logout'>Logout</a>"
+    bookings = Booking.query.filter_by(user_id=current_user.id, status='Booked').order_by(Booking.booking_date.desc()).all()
+    return render_template('trekker/bookings.html', bookings=bookings)
+
+@app.route('/trekker/history')
+@login_required
+def trekker_history():
+    if current_user.role != 'trekker':
+        flash('Access denied.', 'error')
+        return redirect(url_for('home'))
+    bookings = Booking.query.filter(
+        Booking.user_id == current_user.id, 
+        Booking.status.in_(['Cancelled', 'Completed'])
+    ).order_by(Booking.booking_date.desc()).all()
+    return render_template('trekker/history.html', bookings=bookings)
+
+@app.route('/trekker/trek/<int:trek_id>')
+@login_required
+def trekker_trek_detail(trek_id):
+    if current_user.role != 'trekker':
+        flash('Access denied.', 'error')
+        return redirect(url_for('home'))
+        
+    trek = Trek.query.get_or_404(trek_id)
+    # Check if this trekker has an active booking for this trek
+    active_booking = Booking.query.filter_by(user_id=current_user.id, trek_id=trek.id, status='Booked').first()
+    
+    return render_template('trekker/trek_detail.html', trek=trek, active_booking=active_booking)
+
+@app.route('/trekker/book/<int:trek_id>', methods=['POST'])
+@login_required
+def trekker_book_trek(trek_id):
+    if current_user.role != 'trekker':
+        flash('Access denied.', 'error')
+        return redirect(url_for('home'))
+        
+    trek = Trek.query.get_or_404(trek_id)
+    
+    # Validation 1: Trek must be Open
+    if trek.status != 'Open':
+        flash('Bookings are not open for this trek.', 'error')
+        return redirect(url_for('trekker_dashboard'))
+        
+    # Validation 2: Must have available slots
+    if trek.available_slots <= 0:
+        flash('No slots available! This trek is sold out.', 'error')
+        return redirect(url_for('trekker_dashboard'))
+        
+    # Validation 3: Prevent duplicate active booking
+    duplicate = Booking.query.filter_by(user_id=current_user.id, trek_id=trek.id, status='Booked').first()
+    if duplicate:
+        flash('You have already booked this trek.', 'error')
+        return redirect(url_for('trekker_dashboard'))
+        
+    try:
+        # Create booking
+        booking = Booking(
+            user_id=current_user.id,
+            trek_id=trek.id,
+            status='Booked'
+        )
+        # Decrement slots
+        trek.available_slots -= 1
+        
+        db.session.add(booking)
+        db.session.commit()
+        
+        flash(f'Successfully booked trek: {trek.name}!', 'success')
+        return redirect(url_for('trekker_bookings'))
+    except Exception as e:
+        db.session.rollback()
+        flash('An error occurred during booking. Please try again.', 'error')
+        return redirect(url_for('trekker_dashboard'))
+
+@app.route('/trekker/cancel/<int:booking_id>', methods=['POST'])
+@login_required
+def trekker_cancel_booking(booking_id):
+    booking = Booking.query.get_or_404(booking_id)
+    
+    # Access control: Ensure this booking belongs to the current user
+    if booking.user_id != current_user.id:
+        flash('Access denied.', 'error')
+        return redirect(url_for('trekker_bookings'))
+        
+    # Booking must be active and trek must be Open
+    if booking.status != 'Booked' or booking.trek.status != 'Open':
+        flash('This booking cannot be cancelled at this stage.', 'error')
+        return redirect(url_for('trekker_bookings'))
+        
+    try:
+        booking.status = 'Cancelled'
+        # Restore available slot
+        booking.trek.available_slots += 1
+        
+        db.session.commit()
+        flash('Booking cancelled successfully.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash('An error occurred during cancellation.', 'error')
+        
+    return redirect(url_for('trekker_bookings'))
 
 @app.route('/profile', methods=['GET', 'POST'])
 @login_required

@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+
+{% block title %}Browse Treks - TrekSync{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+        <div>
+            <h1 class="h2 fw-bold mb-1">Browse Trek Routes</h1>
+            <p class="text-muted mb-0">Search and filter active expeditions, view route details, and book your slots</p>
+        </div>
+        <span class="text-muted">Welcome Trekker, <strong>{{ current_user.username }}</strong></span>
+    </div>
+
+    <!-- Stats Cards Row -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-6">
+            <div class="card stat-card bookings border-0 bg-white shadow-sm p-4">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <h6 class="text-muted text-uppercase mb-2 font-size-xs fw-bold">Active Bookings</h6>
+                        <h2 class="fw-bold mb-0 text-primary">{{ active_bookings_count }}</h2>
+                    </div>
+                    <div class="bg-primary bg-opacity-10 p-3 rounded-3 text-primary">
+                        <i class="bi bi-calendar-check fs-3"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card stat-card treks border-0 bg-white shadow-sm p-4">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <h6 class="text-muted text-uppercase mb-2 font-size-xs fw-bold">Completed Expeditions</h6>
+                        <h2 class="fw-bold mb-0 text-success">{{ completed_bookings_count }}</h2>
+                    </div>
+                    <div class="bg-success bg-opacity-10 p-3 rounded-3 text-success">
+                        <i class="bi bi-award fs-3"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search & Filter Card -->
+    <div class="card border-0 shadow-sm mb-4 bg-white">
+        <div class="card-body p-3">
+            <form action="{{ url_for('trekker_dashboard') }}" method="GET" class="row g-2 align-items-center">
+                <div class="col-md-6">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+                        <input type="text" name="q" class="form-control border-start-0" placeholder="Search by Trek name, Location..." value="{{ search_query }}">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <select name="difficulty" class="form-select">
+                        <option value="">All Difficulties</option>
+                        <option value="Easy" {% if filter_difficulty == 'Easy' %}selected{% endif %}>Easy</option>
+                        <option value="Moderate" {% if filter_difficulty == 'Moderate' %}selected{% endif %}>Moderate</option>
+                        <option value="Hard" {% if filter_difficulty == 'Hard' %}selected{% endif %}>Hard</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-success w-100 fw-bold">Filter</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Available Treks List -->
+    <div class="row g-4">
+        {% if treks %}
+            {% for trek in treks %}
+                <div class="col-lg-4 col-md-6">
+                    <div class="card h-100 border-0 shadow-sm bg-white">
+                        <div class="card-body p-4 d-flex flex-column h-100">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <span class="badge {% if trek.difficulty == 'Easy' %}badge-easy{% elif trek.difficulty == 'Moderate' %}badge-moderate{% else %}badge-hard{% endif %} py-1.5 px-3">
+                                    {{ trek.difficulty }}
+                                </span>
+                                <span class="badge bg-light text-success border border-success border-opacity-25 py-1 px-2.5">
+                                    {{ trek.status }}
+                                </span>
+                            </div>
+                            
+                            <h4 class="card-title fw-bold mb-1">
+                                <a href="{{ url_for('trekker_trek_detail', trek_id=trek.id) }}" class="text-dark text-decoration-none hover-link">
+                                    {{ trek.name }}
+                                </a>
+                            </h4>
+                            <p class="text-muted small mb-3"><i class="bi bi-geo-alt-fill text-danger me-1"></i>{{ trek.location }}</p>
+                            
+                            <hr class="my-2 text-muted">
+                            
+                            <div class="row g-2 mb-4">
+                                <div class="col-6">
+                                    <small class="text-muted d-block">Duration</small>
+                                    <span class="fw-semibold text-dark"><i class="bi bi-clock me-1 text-success"></i>{{ trek.duration }} Days</span>
+                                </div>
+                                <div class="col-6">
+                                    <small class="text-muted d-block">Slots Available</small>
+                                    <span class="fw-semibold text-dark"><i class="bi bi-people me-1 text-success"></i>{{ trek.available_slots }} / {{ trek.max_slots }}</span>
+                                </div>
+                                <div class="col-12 mt-2">
+                                    <small class="text-muted d-block">Timeline</small>
+                                    <small class="fw-semibold text-muted">
+                                        {{ trek.start_date.strftime('%d %b %Y') }} - {{ trek.end_date.strftime('%d %b %Y') }}
+                                    </small>
+                                </div>
+                            </div>
+
+                            <div class="mt-auto d-flex gap-2">
+                                <a href="{{ url_for('trekker_trek_detail', trek_id=trek.id) }}" class="btn btn-outline-success w-50 py-2 fw-bold">
+                                    Details
+                                </a>
+                                {% set is_already_booked = trek.id in booked_trek_ids %}
+                                {% if trek.available_slots <= 0 %}
+                                    <button class="btn btn-secondary w-50 py-2 fw-bold" disabled>
+                                        Sold Out
+                                    </button>
+                                {% elif is_already_booked %}
+                                    <button class="btn btn-outline-success w-50 py-2 fw-bold" disabled>
+                                        Booked
+                                    </button>
+                                {% else %}
+                                    <form action="{{ url_for('trekker_book_trek', trek_id=trek.id) }}" method="POST" class="w-50">
+                                        <button type="submit" class="btn btn-success w-100 py-2 fw-bold shadow-sm">
+                                            Book
+                                        </button>
+                                    </form>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-12 text-center py-5 text-muted">
+                <i class="bi bi-compass fs-1 mb-2 d-block"></i>
+                No treks found matching your filter criteria.
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
