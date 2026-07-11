@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Profile - TrekSync{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 600px;">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2 fw-bold mb-0">Update Profile</h1>
+        {% if current_user.role == 'admin' %}
+            <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-arrow-left"></i> Dashboard
+            </a>
+        {% elif current_user.role == 'staff' %}
+            <a href="{{ url_for('staff_dashboard') }}" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-arrow-left"></i> Dashboard
+            </a>
+        {% else %}
+            <a href="{{ url_for('trekker_dashboard') }}" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-arrow-left"></i> Dashboard
+            </a>
+        {% endif %}
+    </div>
+
+    <div class="card border-0 shadow-lg p-4 bg-white">
+        <form action="{{ url_for('edit_profile') }}" method="POST">
+            <!-- Username (Read-Only) -->
+            <div class="mb-3">
+                <label for="username" class="form-label fw-semibold text-muted">Username</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-light"><i class="bi bi-person text-muted"></i></span>
+                    <input type="text" class="form-control bg-light" id="username" value="{{ current_user.username }}" readonly>
+                </div>
+                <div class="form-text">Username cannot be changed.</div>
+            </div>
+
+            <!-- Email -->
+            <div class="mb-3">
+                <label for="email" class="form-label fw-semibold">Email Address</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-light"><i class="bi bi-envelope text-muted"></i></span>
+                    <input type="email" class="form-control" id="email" name="email" value="{{ current_user.email }}" required>
+                </div>
+            </div>
+
+            <!-- Staff-specific fields -->
+            {% if current_user.role == 'staff' %}
+                <div class="mb-3">
+                    <label for="contact_details" class="form-label fw-semibold">Contact Details / Qualifications</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light"><i class="bi bi-telephone text-muted"></i></span>
+                        <textarea class="form-control" id="contact_details" name="contact_details" rows="3" required>{{ current_user.profile.contact_details if current_user.profile else '' }}</textarea>
+                    </div>
+                    <div class="form-text">Keep your phone number and experience information up-to-date for admin review.</div>
+                </div>
+            {% endif %}
+
+
+
+            <button type="submit" class="btn btn-success w-100 py-2.5 fw-bold shadow-sm">
+                <i class="bi bi-check2-circle me-1"></i> Save Profile Changes
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+

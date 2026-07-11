@@ -471,19 +471,123 @@ def admin_bookings():
     bookings = query.order_by(Booking.booking_date.desc()).all()
     return render_template('admin/bookings.html', bookings=bookings, search_query=search_query, filter_status=filter_status)
 
+def staff_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_authenticated or current_user.role != 'staff':
+            flash('Access denied. Staff role required.', 'error')
+            return redirect(url_for('home'))
+        
+        # Verify approval
+        profile = StaffProfile.query.filter_by(user_id=current_user.id).first()
+        if not profile or profile.status != 'approved':
+            return redirect(url_for('pending_approval'))
+            
+        return f(*args, **kwargs)
+    return decorated_function
+
 @app.route('/staff/dashboard')
 @login_required
+@staff_required
 def staff_dashboard():
-    if current_user.role != 'staff':
+    treks = Trek.query.filter_by(staff_id=current_user.id).all()
+    
+    # Calculate total participants across all assigned treks
+    total_participants = 0
+    for trek in treks:
+        total_participants += Booking.query.filter_by(trek_id=trek.id, status='Booked').count()
+        
+    return render_template('staff/dashboard.html', treks=treks, total_participants=total_participants)
+
+@app.route('/staff/assigned-treks')
+@login_required
+@staff_required
+def staff_assigned_treks():
+    treks = Trek.query.filter_by(staff_id=current_user.id).all()
+    return render_template('staff/assigned_treks.html', treks=treks)
+
+@app.route('/staff/trek/<int:trek_id>')
+@login_required
+@staff_required
+def staff_trek_detail(trek_id):
+    trek = Trek.query.get_or_404(trek_id)
+    
+    # Access control: Ensure this trek is assigned to the current staff member
+    if trek.staff_id != current_user.id:
+        flash('Access denied. You are not assigned to manage this trek.', 'error')
+        return redirect(url_for('staff_dashboard'))
+        
+    bookings = Booking.query.filter_by(trek_id=trek.id).order_by(Booking.booking_date.desc()).all()
+    booked_count = Booking.query.filter_by(trek_id=trek.id, status='Booked').count()
+    
+    return render_template('staff/trek_detail.html', trek=trek, bookings=bookings, booked_count=booked_count)
+
+@app.route('/staff/trek/<int:trek_id>/update', methods=['POST'])
+@login_required
+@staff_required
+def staff_update_trek(trek_id):
+    trek = Trek.query.get_or_404(trek_id)
+    
+    if trek.staff_id != current_user.id:
         flash('Access denied.', 'error')
-        return redirect(url_for('home'))
+        return redirect(url_for('staff_dashboard'))
         
-    profile = StaffProfile.query.filter_by(user_id=current_user.id).first()
-    if not profile or profile.status != 'approved':
-        return redirect(url_for('pending_approval'))
+    available_slots = int(request.form.get('available_slots'))
+    status = request.form.get('status')
+    
+    booked_count = Booking.query.filter_by(trek_id=trek.id, status='Booked').count()
+    max_allowed_slots = trek.max_slots - booked_count
+    
+    if available_slots < 0 or available_slots > max_allowed_slots:
+        flash(f'Invalid slots number. Available slots must be between 0 and {max_allowed_slots}.', 'error')
+        return redirect(url_for('staff_trek_detail', trek_id=trek.id))
         
-    # Placeholder response
-    return f"<h1>Staff Dashboard</h1><p>Welcome, {current_user.username}! (Approved)</p><a href='/logout'>Logout</a>"
+    trek.available_slots = available_slots
+    trek.status = status
+    db.session.commit()
+    
+    flash('Trek details updated successfully.', 'success')
+    return redirect(url_for('staff_trek_detail', trek_id=trek.id))
+
+@app.route('/staff/trek/<int:trek_id>/start', methods=['POST'])
+@login_required
+@staff_required
+def staff_start_trek(trek_id):
+    trek = Trek.query.get_or_404(trek_id)
+    
+    if trek.staff_id != current_user.id:
+        flash('Access denied.', 'error')
+        return redirect(url_for('staff_dashboard'))
+        
+    trek.status = 'Started'
+    trek.available_slots = 0  # Close booking when trek starts
+    db.session.commit()
+    
+    flash('Expedition has started! Bookings are now closed.', 'success')
+    return redirect(url_for('staff_trek_detail', trek_id=trek.id))
+
+@app.route('/staff/trek/<int:trek_id>/complete', methods=['POST'])
+@login_required
+@staff_required
+def staff_complete_trek(trek_id):
+    trek = Trek.query.get_or_404(trek_id)
+    
+    if trek.staff_id != current_user.id:
+        flash('Access denied.', 'error')
+        return redirect(url_for('staff_dashboard'))
+        
+    trek.status = 'Completed'
+    trek.available_slots = 0
+    
+    # Mark all active bookings for this trek as completed
+    active_bookings = Booking.query.filter_by(trek_id=trek.id, status='Booked').all()
+    for booking in active_bookings:
+        booking.status = 'Completed'
+        
+    db.session.commit()
+    
+    flash('Expedition marked as completed successfully. Participant records updated.', 'success')
+    return redirect(url_for('staff_trek_detail', trek_id=trek.id))
 
 @app.route('/trekker/dashboard')
 @login_required
@@ -493,6 +597,38 @@ def trekker_dashboard():
         return redirect(url_for('home'))
     # Placeholder response
     return f"<h1>Trekker Dashboard</h1><p>Welcome, {current_user.username}!</p><a href='/logout'>Logout</a>"
+
+@app.route('/profile', methods=['GET', 'POST'])
+@login_required
+def edit_profile():
+    if request.method == 'POST':
+        email = request.form.get('email', '').strip()
+        
+        # Check duplicate email
+        existing_user = User.query.filter_by(email=email).first()
+        if existing_user and existing_user.id != current_user.id:
+            flash('Email address is already in use by another account.', 'error')
+            return render_template('profile.html')
+            
+        try:
+            current_user.email = email
+                
+            # If staff, update profile contact details
+            if current_user.role == 'staff':
+                profile = StaffProfile.query.filter_by(user_id=current_user.id).first()
+                if profile:
+                    profile.contact_details = request.form.get('contact_details', '').strip()
+                    
+            db.session.commit()
+            flash('Profile updated successfully!', 'success')
+            return redirect(url_for('edit_profile'))
+            
+        except Exception as e:
+            db.session.rollback()
+            flash('An error occurred while updating profile.', 'error')
+            return render_template('profile.html')
+            
+    return render_template('profile.html')
 
 if __name__ == '__main__':
     app.run(debug=True)

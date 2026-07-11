@@ -58,6 +58,33 @@
                                     <i class="bi bi-journal-bookmark"></i> Bookings
                                 </a>
                             </li>
+                        {% elif current_user.role == 'staff' %}
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.path == url_for('staff_dashboard') %}active{% endif %}" href="{{ url_for('staff_dashboard') }}">
+                                    <i class="bi bi-speedometer2"></i> Dashboard
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.path == url_for('staff_assigned_treks') %}active{% endif %}" href="{{ url_for('staff_assigned_treks') }}">
+                                    <i class="bi bi-map"></i> Assigned Treks
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.path == url_for('edit_profile') %}active{% endif %}" href="{{ url_for('edit_profile') }}">
+                                    <i class="bi bi-person-gear"></i> Edit Profile
+                                </a>
+                            </li>
+                        {% elif current_user.role == 'trekker' %}
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.path == url_for('trekker_dashboard') %}active{% endif %}" href="{{ url_for('trekker_dashboard') }}">
+                                    <i class="bi bi-speedometer2"></i> Dashboard
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.path == url_for('edit_profile') %}active{% endif %}" href="{{ url_for('edit_profile') }}">
+                                    <i class="bi bi-person-gear"></i> Edit Profile
+                                </a>
+                            </li>
                         {% endif %}
                     {% else %}
                         <li class="nav-item">

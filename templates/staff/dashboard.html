@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block title %}Staff Dashboard - TrekSync{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h2 fw-bold mb-1">Staff Dashboard</h1>
+            <p class="text-muted mb-0">Manage your assigned trekking expeditions and participants</p>
+        </div>
+        <span class="text-muted">Welcome Guide, <strong>{{ current_user.username }}</strong></span>
+    </div>
+
+    <!-- Stats summary -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-6">
+            <div class="card stat-card treks border-0 bg-white shadow-sm p-4">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <h6 class="text-muted text-uppercase mb-2 font-size-xs fw-bold">Assigned Treks</h6>
+                        <h2 class="fw-bold mb-0 text-success">{{ treks|length }}</h2>
+                    </div>
+                    <div class="bg-success bg-opacity-10 p-3 rounded-3 text-success">
+                        <i class="bi bi-map fs-3"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card stat-card users border-0 bg-white shadow-sm p-4">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <h6 class="text-muted text-uppercase mb-2 font-size-xs fw-bold">Total Registered Trekkers</h6>
+                        <h2 class="fw-bold mb-0 text-info">{{ total_participants }}</h2>
+                    </div>
+                    <div class="bg-info bg-opacity-10 p-3 rounded-3 text-info">
+                        <i class="bi bi-people fs-3"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Assigned Treks List -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-dark text-white fw-bold py-3">
+            <i class="bi bi-list-task me-2 text-success"></i>Your Assigned Expeditions
+        </div>
+        <div class="card-body p-0">
+            {% if treks %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-4">Trek Name</th>
+                                <th>Location</th>
+                                <th>Timeline</th>
+                                <th>Difficulty</th>
+                                <th>Slots Booked</th>
+                                <th>Status</th>
+                                <th class="text-end pe-4">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for trek in treks %}
+                                <tr>
+                                    <td class="ps-4 font-semibold">
+                                        <span class="fw-bold d-block">{{ trek.name }}</span>
+                                        <small class="text-muted">ID: #{{ trek.id }}</small>
+                                    </td>
+                                    <td>{{ trek.location }}</td>
+                                    <td>
+                                        <small class="d-block font-semibold">
+                                            {{ trek.start_date.strftime('%d %b %Y') }} - {{ trek.end_date.strftime('%d %b %Y') }}
+                                        </small>
+                                        <small class="text-muted">{{ trek.duration }} Days</small>
+                                    </td>
+                                    <td>
+                                        <span class="badge text-capitalize 
+                                            {% if trek.difficulty == 'Easy' %}badge-easy
+                                            {% elif trek.difficulty == 'Moderate' %}badge-moderate
+                                            {% else %}badge-hard{% endif %} py-1 px-2.5">
+                                            {{ trek.difficulty }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="fw-bold">{{ trek.max_slots - trek.available_slots }}</span> / {{ trek.max_slots }}
+                                        <div class="progress mt-1" style="height: 5px; max-width: 120px;">
+                                            {% set booked_pct = ((trek.max_slots - trek.available_slots) / trek.max_slots * 100)|int %}
+                                            <div class="progress-bar bg-success" role="progressbar" style="width: {{ booked_pct }}%"></div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge status-{{ trek.status.lower() }} py-1 px-2">
+                                            {{ trek.status }}
+                                        </span>
+                                    </td>
+                                    <td class="text-end pe-4">
+                                        <a href="{{ url_for('staff_trek_detail', trek_id=trek.id) }}" class="btn btn-sm btn-success px-3">
+                                            <i class="bi bi-gear-fill me-1"></i> Manage
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="p-5 text-center text-muted">
+                    <i class="bi bi-compass fs-1 mb-2 d-block"></i>
+                    No treks assigned to you yet by the Admin.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
