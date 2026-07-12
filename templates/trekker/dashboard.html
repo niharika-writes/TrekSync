@@ -4,12 +4,12 @@
 
 {% block content %}
 <div class="container">
-    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center border-bottom pb-3 mb-4 gap-3">
         <div>
-            <h1 class="h2 fw-bold mb-1">Browse Trek Routes</h1>
+            <h1 class="h2 fw-bold mb-1 text-dark">Browse Trek Routes</h1>
             <p class="text-muted mb-0">Search and filter active expeditions, view route details, and book your slots</p>
         </div>
-        <span class="text-muted">Welcome Trekker, <strong>{{ current_user.username }}</strong></span>
+        <h2 class="h2 fw-light text-muted mb-0 text-md-end">Welcome Trekker, <span class="fw-bold text-success">{{ current_user.username }}</span></h2>
     </div>
 
     <!-- Stats Cards Row -->

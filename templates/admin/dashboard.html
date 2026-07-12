@@ -4,9 +4,9 @@
 
 {% block content %}
 <div class="container">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="h2 fw-bold mb-0">Admin Control Panel</h1>
-        <span class="text-muted">Welcome, <strong>{{ current_user.username }}</strong></span>
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center border-bottom pb-3 mb-4 gap-2">
+        <h1 class="h2 fw-bold mb-0 text-dark">Admin Control Panel</h1>
+        <h2 class="h2 fw-light text-muted mb-0">Welcome, <span class="fw-bold text-success">{{ current_user.username }}</span></h2>
     </div>
 
     <!-- Stats Cards Row -->
@@ -205,5 +205,87 @@
             </div>
         </div>
     </div>
+
+    <!-- Statistics Charts Section -->
+    <div class="card border-0 shadow-sm mt-4">
+        <div class="card-header bg-dark text-white fw-bold py-3">
+            <i class="bi bi-bar-chart-fill me-2 text-success"></i>Trek Bookings Statistics
+        </div>
+        <div class="card-body p-4">
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <canvas id="bookingsChart" style="max-height: 350px;"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const ctx = document.getElementById('bookingsChart').getContext('2d');
+        const trekLabels = {{ trek_labels|tojson }};
+        const bookingCounts = {{ trek_counts|tojson }};
+        
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: trekLabels,
+                datasets: [{
+                    label: 'Active Bookings',
+                    data: bookingCounts,
+                    backgroundColor: 'rgba(46, 125, 50, 0.65)',
+                    borderColor: 'rgba(46, 125, 50, 1)',
+                    borderWidth: 2,
+                    borderRadius: 8,
+                    barPercentage: 0.6
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return ` Bookings: ${context.raw}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1,
+                            font: {
+                                family: "'Outfit', sans-serif"
+                            }
+                        },
+                        grid: {
+                            display: true,
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            font: {
+                                family: "'Outfit', sans-serif",
+                                weight: 'bold'
+                            }
+                        },
+                        grid: {
+                            display: false
+                        }
+                    }
+                }
+            }
+        });
+    });
+</script>
 {% endblock %}

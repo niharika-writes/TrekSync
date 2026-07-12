@@ -201,7 +201,23 @@ def admin_dashboard():
     pending_staff = StaffProfile.query.filter_by(status='pending').all()
     recent_bookings = Booking.query.order_by(Booking.booking_date.desc()).limit(5).all()
     
-    return render_template('admin/dashboard.html', stats=stats, pending_staff=pending_staff, recent_bookings=recent_bookings)
+    # Fetch trek booking statistics for charts
+    trek_stats = db.session.query(
+        Trek.name, 
+        db.func.count(Booking.id)
+    ).outerjoin(Booking, (Booking.trek_id == Trek.id) & (Booking.status == 'Booked')).group_by(Trek.id).all()
+    
+    trek_labels = [s[0] for s in trek_stats]
+    trek_counts = [s[1] for s in trek_stats]
+    
+    return render_template(
+        'admin/dashboard.html', 
+        stats=stats, 
+        pending_staff=pending_staff, 
+        recent_bookings=recent_bookings,
+        trek_labels=trek_labels,
+        trek_counts=trek_counts
+    )
 
 @app.route('/admin/staff')
 @login_required
@@ -764,6 +780,55 @@ def edit_profile():
             return render_template('profile.html')
             
     return render_template('profile.html')
+
+@app.route('/api/treks')
+def api_treks():
+    treks = Trek.query.all()
+    data = []
+    for t in treks:
+        data.append({
+            'id': t.id,
+            'name': t.name,
+            'location': t.location,
+            'difficulty': t.difficulty,
+            'duration': t.duration,
+            'max_slots': t.max_slots,
+            'available_slots': t.available_slots,
+            'status': t.status,
+            'start_date': t.start_date.strftime('%Y-%m-%d'),
+            'end_date': t.end_date.strftime('%Y-%m-%d'),
+            'guide': t.staff.username if t.staff else None
+        })
+    return {'treks': data}
+
+@app.route('/api/bookings')
+def api_bookings():
+    bookings = Booking.query.all()
+    data = []
+    for b in bookings:
+        data.append({
+            'id': b.id,
+            'user': b.user.username,
+            'trek': b.trek.name,
+            'booking_date': b.booking_date.strftime('%Y-%m-%d %H:%M:%S'),
+            'status': b.status
+        })
+    return {'bookings': data}
+
+@app.route('/api/users')
+def api_users():
+    users = User.query.all()
+    data = []
+    for u in users:
+        data.append({
+            'id': u.id,
+            'username': u.username,
+            'email': u.email,
+            'role': u.role,
+            'is_active': u.is_active,
+            'is_blacklisted': u.is_blacklisted
+        })
+    return {'users': data}
 
 if __name__ == '__main__':
     app.run(debug=True)
