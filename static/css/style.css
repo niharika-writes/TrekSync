@@ -1,18 +1,19 @@
 /* Custom CSS for TrekSync - Trekking Management Application */
 
 :root {
-    --primary-color: #2e7d32; /* Green */
-    --primary-dark: #1b5e20;
-    --primary-light: #e8f5e9;
-    --accent-color: #f57c00; /* Orange */
-    --dark-bg: #121212;
-    --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-    --card-shadow-hover: 0 8px 30px rgba(0, 0, 0, 0.12);
+    --primary-color: #5a3d21;      /* Deep Warm Brown */
+    --primary-dark: #3d2814;       /* Darker Brown */
+    --primary-light: #f4eddf;      /* Soft Off-White/Cream */
+    --accent-color: #ab7a44;       /* Medium Golden Brown */
+    --tan-color: #d2b595;          /* Light Tan/Beige */
+    --bg-color: #fcfaf7;           /* Premium soft cream background */
+    --card-shadow: 0 4px 20px rgba(90, 61, 33, 0.05);
+    --card-shadow-hover: 0 8px 30px rgba(90, 61, 33, 0.12);
 }
 
 body {
     font-family: 'Outfit', sans-serif;
-    background-color: #f8f9fa;
+    background-color: var(--bg-color);
     display: flex;
     flex-direction: column;
     min-height: 100vh;
@@ -21,15 +22,15 @@ body {
 /* Typography */
 h1, h2, h3, h4, h5, h6 {
     font-weight: 700;
-    color: #212529;
+    color: var(--primary-color);
 }
 
 /* Navbar styles */
 .navbar-custom {
-    background: linear-gradient(135deg, #1b5e20 0%, #113f14 100%) !important;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
-    border-bottom: 3px solid #2e7d32;
-    padding: 0.6rem 1.5rem;
+    background: var(--primary-color) !important;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    border-bottom: 3px solid var(--accent-color);
+    padding: 0.8rem 1.5rem;
 }
 .navbar-custom .navbar-brand {
     font-size: 1.5rem;
@@ -38,44 +39,63 @@ h1, h2, h3, h4, h5, h6 {
     color: #ffffff !important;
 }
 .navbar-custom .nav-link {
-    color: rgba(255, 255, 255, 0.8) !important;
-    font-weight: 500;
+    color: rgba(255, 255, 255, 0.85) !important;
+    font-weight: 600;
     font-size: 0.95rem;
-    padding: 0.5rem 1rem !important;
+    padding: 0.5rem 1.2rem !important;
     border-radius: 20px;
-    margin: 0 0.1rem;
+    margin: 0 0.15rem;
     transition: all 0.2s ease-in-out;
 }
-.navbar-custom .nav-link:hover, 
-.navbar-custom .nav-link.active {
+.navbar-custom .nav-link:hover {
     color: #ffffff !important;
-    background-color: rgba(255, 255, 255, 0.12);
+    background-color: rgba(255, 255, 255, 0.1);
+}
+.navbar-custom .nav-link.active {
+    color: var(--primary-color) !important;
+    background-color: var(--primary-light) !important;
 }
 .navbar-custom .nav-link i {
     margin-right: 4px;
 }
-.navbar-custom .btn-logout {
-    border: 1px solid rgba(255, 255, 255, 0.35);
-    color: #ffffff;
-    background: transparent;
+
+/* Navbar Buttons */
+.btn-outline-tan {
+    border: 1.5px solid var(--tan-color);
+    color: var(--tan-color);
+    border-radius: 20px;
     transition: all 0.25s ease;
 }
-.navbar-custom .btn-logout:hover {
-    background-color: #dc3545;
-    border-color: #dc3545;
-    color: #ffffff;
-    box-shadow: 0 0 10px rgba(220, 53, 69, 0.3);
+.btn-outline-tan:hover {
+    background-color: var(--tan-color);
+    color: var(--primary-color) !important;
+    box-shadow: 0 0 12px rgba(210, 181, 149, 0.3);
+}
+.btn-register {
+    background-color: var(--primary-light);
+    color: var(--primary-color);
+    border-radius: 20px;
+    transition: all 0.25s ease;
+    border: 1.5px solid var(--primary-light);
+}
+.btn-register:hover {
+    background-color: var(--tan-color);
+    border-color: var(--tan-color);
+    color: var(--primary-color);
+    box-shadow: 0 0 12px rgba(210, 181, 149, 0.3);
 }
 
-/* Buttons */
+/* Custom Buttons */
 .btn-success {
     background-color: var(--primary-color);
     border-color: var(--primary-color);
+    color: #ffffff;
     transition: all 0.3s ease;
 }
-.btn-success:hover {
-    background-color: var(--primary-dark);
-    border-color: var(--primary-dark);
+.btn-success:hover, .btn-success:focus {
+    background-color: var(--accent-color);
+    border-color: var(--accent-color);
+    color: #ffffff;
     transform: translateY(-1px);
 }
 .btn-outline-success {
@@ -85,13 +105,26 @@ h1, h2, h3, h4, h5, h6 {
 .btn-outline-success:hover {
     background-color: var(--primary-color);
     border-color: var(--primary-color);
-    color: white;
+    color: #ffffff;
+}
+
+.btn-primary-custom {
+    background-color: var(--primary-color);
+    border: 1.5px solid var(--primary-color);
+    color: var(--primary-light);
+    transition: all 0.25s ease;
+}
+.btn-primary-custom:hover {
+    background-color: var(--accent-color);
+    border-color: var(--accent-color);
+    color: #ffffff;
+    transform: translateY(-2px);
 }
 
 /* Cards */
 .card {
-    border: none;
-    border-radius: 12px;
+    border: 1px solid rgba(210, 181, 149, 0.2);
+    border-radius: 16px;
     box-shadow: var(--card-shadow);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
@@ -100,62 +133,53 @@ h1, h2, h3, h4, h5, h6 {
     box-shadow: var(--card-shadow-hover);
 }
 
-/* Hero Section */
-.hero-section {
-    background: linear-gradient(135deg, rgba(27, 94, 32, 0.9), rgba(46, 125, 50, 0.75)), 
-                url('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1920&q=80');
-    background-size: cover;
-    background-position: center;
-    color: white;
-    padding: 100px 0;
-    border-radius: 0 0 24px 24px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
-}
-
 /* Forms */
 .form-control:focus, .form-select:focus {
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 0.25rem rgba(46, 125, 50, 0.25);
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 0.25rem rgba(171, 122, 68, 0.25);
 }
 
 .auth-card {
-    max-width: 450px;
+    max-width: 480px;
     margin: 40px auto;
     padding: 30px;
+    border-radius: 20px;
 }
 
 /* Difficulty Badges */
 .badge-easy {
-    background-color: #2e7d32;
-    color: white;
+    background-color: var(--primary-color);
+    color: var(--primary-light);
 }
 .badge-moderate {
-    background-color: #f57c00;
-    color: white;
+    background-color: var(--accent-color);
+    color: #ffffff;
 }
 .badge-hard {
-    background-color: #c62828;
-    color: white;
+    background-color: #8b2626; /* Warm Red */
+    color: #ffffff;
 }
 
 /* Trek status colors */
 .status-pending { background-color: #ffe082; color: #8f6b00; }
-.status-approved { background-color: #c8e6c9; color: #2e7d32; }
-.status-open { background-color: #bbdefb; color: #1565c0; }
+.status-approved { background-color: var(--primary-light); color: var(--primary-color); }
+.status-open { background-color: var(--tan-color); color: var(--primary-color); }
 .status-closed { background-color: #ffcdd2; color: #c62828; }
 .status-completed { background-color: #e0e0e0; color: #424242; }
+.status-started { background-color: #cce5ff; color: #004085; }
 
 /* Dashboard layout styles */
 .stat-card {
     border-left: 5px solid var(--primary-color);
 }
-.stat-card.users { border-left-color: #17a2b8; }
-.stat-card.bookings { border-left-color: #ffc107; }
-.stat-card.treks { border-left-color: #28a745; }
-.stat-card.staff { border-left-color: #6f42c1; }
+.stat-card.users { border-left-color: var(--accent-color); }
+.stat-card.bookings { border-left-color: var(--tan-color); }
+.stat-card.treks { border-left-color: var(--primary-color); }
+.stat-card.staff { border-left-color: var(--primary-dark); }
 
 .footer {
-    border-top: 3px solid var(--primary-color);
+    border-top: 3px solid var(--accent-color);
+    background-color: var(--primary-dark) !important;
 }
 
 /* Custom Navbar Tweaks */
@@ -167,15 +191,175 @@ h1, h2, h3, h4, h5, h6 {
     transform: scale(1.1);
 }
 .navbar-custom .hover-red:hover i {
-    color: #dc3545 !important;
+    color: #ff8a8a !important;
     transform: scale(1.1);
 }
 .navbar-custom .nav-link i {
     transition: all 0.2s ease;
 }
-.navbar-custom .dropdown-toggle i {
-    transition: all 0.2s ease;
+
+/* Landing Page Hero custom layout styles */
+.hero-badge {
+    display: inline-block;
+    padding: 6px 16px;
+    background-color: rgba(171, 122, 68, 0.12);
+    color: var(--accent-color);
+    font-weight: 700;
+    font-size: 0.85rem;
+    border-radius: 50px;
+    margin-bottom: 1.5rem;
+    letter-spacing: 0.5px;
 }
-.navbar-custom .dropdown-toggle:hover i {
-    transform: scale(1.1);
+.hero-title {
+    font-size: 3.5rem;
+    font-weight: 800;
+    line-height: 1.15;
+    color: var(--primary-color);
+    margin-bottom: 1.5rem;
+}
+.hero-title span.highlight {
+    color: var(--accent-color);
+}
+.hero-subtitle {
+    font-size: 1.05rem;
+    line-height: 1.6;
+    color: #6d5b4a;
+    max-width: 550px;
+    margin-bottom: 2rem;
+}
+.hero-image-wrap img {
+    border-radius: 24px;
+    box-shadow: 0 15px 40px rgba(90, 61, 33, 0.15);
+    max-width: 100%;
+    height: auto;
+}
+
+/* Stats strip */
+.stats-strip {
+    background-color: var(--primary-light);
+    border: 1px solid rgba(210, 181, 149, 0.35);
+    border-radius: 20px;
+    padding: 1.5rem;
+}
+.stats-item h4 {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: var(--primary-color);
+    margin-bottom: 0.1rem;
+}
+.stats-item p {
+    font-size: 0.85rem;
+    color: #6d5b4a;
+    margin-bottom: 0;
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+/* Landing Page Cards & Possibilities */
+.section-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    background-color: rgba(171, 122, 68, 0.1);
+    color: var(--accent-color);
+    font-weight: 700;
+    font-size: 0.75rem;
+    border-radius: 50px;
+    text-transform: uppercase;
+    margin-bottom: 0.8rem;
+}
+.section-title {
+    font-size: 2.2rem;
+    font-weight: 800;
+    color: var(--primary-color);
+    margin-bottom: 0.5rem;
+}
+.section-subtitle {
+    color: #6d5b4a;
+    font-size: 1.05rem;
+    margin-bottom: 3rem;
+}
+
+.icon-circle {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary-light);
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+.icon-circle-trekker { background-color: var(--primary-color); }
+.icon-circle-staff { background-color: var(--accent-color); }
+.icon-circle-admin { background-color: var(--primary-dark); }
+
+.card-link-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 20px;
+    border-radius: 50px;
+    border: 1.5px solid var(--tan-color);
+    background-color: transparent;
+    color: var(--primary-color);
+    font-weight: 700;
+    font-size: 0.9rem;
+    text-decoration: none;
+    transition: all 0.25s ease;
+}
+.card-link-btn:hover {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: var(--primary-light);
+    transform: translateY(-2px);
+}
+.hover-link {
+    transition: color 0.2s ease;
+}
+.hover-link:hover {
+    color: var(--accent-color) !important;
+}
+
+/* Toast override for top-right notifications */
+.toast {
+    background-color: var(--primary-color) !important;
+    border-radius: 12px;
+}
+.toast.bg-danger { background-color: #8b2626 !important; }
+.toast.bg-success { background-color: #3e5a21 !important; }
+.toast.bg-info { background-color: #375363 !important; }
+.toast-body {
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.text-accent {
+    color: var(--accent-color) !important;
+}
+
+/* Trek detail mockup page styles */
+.detail-banner-card {
+    background: linear-gradient(135deg, #f4eddf 0%, #d2b595 100%);
+    border-radius: 24px;
+    overflow: hidden;
+    position: relative;
+    border: none;
+    box-shadow: var(--card-shadow);
+}
+.detail-banner-overlay-img {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 48%;
+    height: 100%;
+    background-image: url('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=800&q=80');
+    background-size: cover;
+    background-position: center;
+    clip-path: polygon(12% 0%, 100% 0%, 100% 100%, 0% 100%);
+}
+@media (max-width: 768px) {
+    .detail-banner-overlay-img {
+        display: none;
+    }
 }

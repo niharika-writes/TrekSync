@@ -32,62 +32,77 @@
                         </span>
                     </div>
 
-                    <!-- Update Slots / Status Form -->
-                    <form action="{{ url_for('staff_update_trek', trek_id=trek.id) }}" method="POST" class="mb-4">
-                        <div class="mb-3">
-                            <label for="available_slots" class="form-label fw-semibold">Available Slots</label>
-                            <input type="number" class="form-control" id="available_slots" name="available_slots" 
-                                   value="{{ trek.available_slots }}" 
-                                   min="0" max="{{ trek.max_slots }}" required>
-                            <div class="form-text">
-                                Max capacity: <strong>{{ trek.max_slots }}</strong><br>
-                                Currently booked: <strong>{{ booked_count }}</strong>
-                            </div>
+                    {% if trek.status == 'Completed' %}
+                        <div class="alert alert-success text-center border-0 py-3 mb-0 fw-bold rounded-3">
+                            <i class="bi bi-check-circle-fill me-2 fs-4"></i><br>
+                            This expedition has been completed!<br>
+                            Details and status are locked.
                         </div>
-
-                        <div class="mb-4">
-                            <label for="status" class="form-label fw-semibold">Trek Status</label>
-                            <select class="form-select" id="status" name="status" required>
-                                <option value="Open" {% if trek.status == 'Open' %}selected{% endif %}>Open (Bookable)</option>
-                                <option value="Closed" {% if trek.status == 'Closed' %}selected{% endif %}>Closed</option>
-                            </select>
+                    {% elif trek.status == 'Started' %}
+                        <div class="alert alert-info text-center border-0 py-3 mb-4 fw-bold rounded-3">
+                            <i class="bi bi-info-circle-fill me-2 fs-4"></i><br>
+                            Expedition is in progress (Started). Settings are locked.
                         </div>
-
-                        <button type="submit" class="btn btn-success w-100 py-2 fw-bold">
-                            <i class="bi bi-save me-1"></i> Update Details
-                        </button>
-                    </form>
-
-                    <hr class="text-muted">
-
-                    <!-- Actions Panel (Started/Completed) -->
-                    <div class="mt-4">
-                        <h6 class="fw-bold mb-3 text-dark">Expedition Progress</h6>
                         
-                        <div class="d-grid gap-2">
-                            {% if trek.status != 'Started' and trek.status != 'Completed' %}
+                        <!-- Actions Panel (Completed only) -->
+                        <div class="mt-4">
+                            <h6 class="fw-bold mb-3 text-dark">Expedition Progress</h6>
+                            <form action="{{ url_for('staff_complete_trek', trek_id=trek.id) }}" method="POST" class="mb-0">
+                                <button type="submit" class="btn btn-primary w-100 py-2.5 fw-bold">
+                                    <i class="bi bi-check-circle-fill me-1"></i> Mark as Completed
+                                </button>
+                            </form>
+                        </div>
+                    {% else %}
+                        <!-- Update Slots / Status Form -->
+                        <form action="{{ url_for('staff_update_trek', trek_id=trek.id) }}" method="POST" class="mb-4">
+                            <div class="mb-3">
+                                <label for="available_slots" class="form-label fw-semibold">Available Slots</label>
+                                <input type="number" class="form-control" id="available_slots" name="available_slots" 
+                                       value="{{ trek.available_slots }}" 
+                                       min="0" max="{{ trek.max_slots }}" required>
+                                <div class="form-text">
+                                    Max capacity: <strong>{{ trek.max_slots }}</strong><br>
+                                    Currently booked: <strong>{{ booked_count }}</strong>
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <label for="status" class="form-label fw-semibold">Trek Status</label>
+                                <select class="form-select" id="status" name="status" required>
+                                    <option value="Open" {% if trek.status == 'Open' %}selected{% endif %}>Open (Bookable)</option>
+                                    <option value="Closed" {% if trek.status == 'Closed' %}selected{% endif %}>Closed</option>
+                                </select>
+                            </div>
+
+                            <button type="submit" class="btn btn-success w-100 py-2 fw-bold">
+                                <i class="bi bi-save me-1"></i> Update Details
+                            </button>
+                        </form>
+
+                        <hr class="text-muted">
+
+                        <!-- Actions Panel (Started/Completed) -->
+                        <div class="mt-4">
+                            <h6 class="fw-bold mb-3 text-dark">Expedition Progress</h6>
+                            
+                            <div class="d-grid gap-2">
                                 <form action="{{ url_for('staff_start_trek', trek_id=trek.id) }}" method="POST">
                                     <button type="submit" class="btn btn-outline-primary w-100 py-2.5 fw-bold"
                                             onclick="return confirm('Are you sure you want to start this trek? This will close bookings.');">
                                         <i class="bi bi-play-circle-fill me-1"></i> Start Expedition
                                     </button>
                                 </form>
-                            {% endif %}
 
-                            {% if trek.status != 'Completed' %}
                                 <form action="{{ url_for('staff_complete_trek', trek_id=trek.id) }}" method="POST">
                                     <button type="submit" class="btn btn-primary w-100 py-2.5 fw-bold"
                                             onclick="return confirm('Are you sure you want to mark this trek as completed? This will update all active bookings to Completed status.');">
                                         <i class="bi bi-check-circle-fill me-1"></i> Mark as Completed
                                     </button>
                                 </form>
-                            {% else %}
-                                <div class="alert alert-success text-center border-0 py-2 mb-0 fw-bold">
-                                    <i class="bi bi-check-circle-fill me-1"></i> Expedition Completed!
-                                </div>
-                            {% endif %}
+                            </div>
                         </div>
-                    </div>
+                    {% endif %}
                 </div>
             </div>
         </div>

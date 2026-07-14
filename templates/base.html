@@ -90,6 +90,9 @@
                         <li class="nav-item">
                             <a class="nav-link {% if request.path == url_for('home') %}active{% endif %}" href="{{ url_for('home') }}">Home</a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.path == url_for('about') %}active{% endif %}" href="{{ url_for('about') }}">About Us</a>
+                        </li>
                     {% endif %}
                 </ul>
 
@@ -111,10 +114,14 @@
                         </li>
                     {% else %}
                         <li class="nav-item">
-                            <a class="nav-link {% if request.path == url_for('login') %}active{% endif %}" href="{{ url_for('login') }}">Login</a>
+                            <a class="btn btn-outline-tan text-white px-3 py-1.5 rounded-pill fw-bold" href="{{ url_for('login') }}">
+                                <i class="bi bi-box-arrow-in-right me-1"></i>Login
+                            </a>
                         </li>
                         <li class="nav-item ms-lg-2">
-                            <a class="btn btn-light text-success btn-sm px-4 rounded-pill fw-bold" href="{{ url_for('register') }}">Register</a>
+                            <a class="btn btn-register text-dark px-4 py-1.5 rounded-pill fw-bold" href="{{ url_for('register') }}">
+                                <i class="bi bi-person-plus me-1"></i>Register
+                            </a>
                         </li>
                     {% endif %}
                 </ul>
@@ -189,6 +196,15 @@
                 toast.show();
                 return toast;
             });
+
+            // Auto-refresh pages periodically to reflect real-time updates across tabs (e.g. 15 seconds)
+            {% if current_user.is_authenticated %}
+            setInterval(function() {
+                if (document.visibilityState === 'visible' && !document.activeElement.matches('input, textarea, select')) {
+                    window.location.reload();
+                }
+            }, 15000);
+            {% endif %}
         });
     </script>
     {% block scripts %}{% endblock %}

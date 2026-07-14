@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}About Us - TrekSync{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row align-items-center g-5">
+        <!-- Left Column: Content -->
+        <div class="col-lg-6">
+            <span class="hero-badge">About Us</span>
+            <h1 class="hero-title">Our Mission,<br>Your <span class="highlight">Adventure</span></h1>
+            <p class="hero-subtitle">
+                TrekSync is designed to bridge the gap between adventure seekers, expert guides, and organization administrators. We provide a unified platform for discovering curated paths, scheduling safety-approved expeditions, and managing real-time slot bookings.
+            </p>
+            <p class="text-muted mb-4" style="font-size: 1.02rem; line-height: 1.6; max-width: 550px;">
+                Whether you are planning your first wilderness trek or managing a large team of veteran guides, TrekSync offers clean coordination, capacity safeguards, and modern operational tracking to ensure every journey is safe, organized, and memorable.
+            </p>
+            
+            <div class="d-flex gap-3 mb-5">
+                {% if not current_user.is_authenticated %}
+                    <a href="{{ url_for('register') }}" class="btn btn-primary-custom px-4 py-3 rounded-pill fw-bold shadow-sm d-inline-flex align-items-center gap-2 text-decoration-none">
+                        Get Started <i class="bi bi-arrow-right-circle-fill"></i>
+                    </a>
+                {% else %}
+                    {% if current_user.role == 'admin' %}
+                        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-primary-custom px-4 py-3 rounded-pill fw-bold shadow-sm d-inline-flex align-items-center gap-2 text-decoration-none">
+                            Go to Dashboard <i class="bi bi-arrow-right-circle-fill"></i>
+                        </a>
+                    {% elif current_user.role == 'staff' %}
+                        <a href="{{ url_for('staff_dashboard') }}" class="btn btn-primary-custom px-4 py-3 rounded-pill fw-bold shadow-sm d-inline-flex align-items-center gap-2 text-decoration-none">
+                            Go to Dashboard <i class="bi bi-arrow-right-circle-fill"></i>
+                        </a>
+                    {% else %}
+                        <a href="{{ url_for('trekker_dashboard') }}" class="btn btn-primary-custom px-4 py-3 rounded-pill fw-bold shadow-sm d-inline-flex align-items-center gap-2 text-decoration-none">
+                            Browse Treks <i class="bi bi-arrow-right-circle-fill"></i>
+                        </a>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Right Column: Image -->
+        <div class="col-lg-6 hero-image-wrap text-center">
+            <img src="https://images.unsplash.com/photo-1551632811-561730d1e4a6?auto=format&fit=crop&w=800&q=80" alt="About TrekSync" class="img-fluid rounded-4 shadow-lg">
+        </div>
+    </div>
+</div>
+{% endblock %}

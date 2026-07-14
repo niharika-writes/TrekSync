@@ -47,6 +47,10 @@ with app.app_context():
 def home():
     return render_template('home.html')
 
+@app.route('/about')
+def about():
+    return render_template('about.html')
+
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if current_user.is_authenticated:
@@ -442,6 +446,13 @@ def admin_edit_trek(trek_id):
         trek.max_slots = max_slots
         trek.available_slots = max_slots - active_bookings_count
         trek.status = status
+        if status == 'Completed':
+            trek.available_slots = 0
+            active_bookings = Booking.query.filter_by(trek_id=trek.id, status='Booked').all()
+            for booking in active_bookings:
+                booking.status = 'Completed'
+        elif status == 'Started':
+            trek.available_slots = 0
         trek.start_date = start_date
         trek.end_date = end_date
         
@@ -473,7 +484,7 @@ def admin_bookings():
     search_query = request.args.get('q', '').strip()
     filter_status = request.args.get('status', '').strip()
     
-    query = Booking.query.join(User).join(Trek)
+    query = Booking.query.join(User, Booking.user_id == User.id).join(Trek, Booking.trek_id == Trek.id)
     
     if search_query:
         if search_query.isdigit():
@@ -482,7 +493,7 @@ def admin_bookings():
             query = query.filter((User.username.like(f"%{search_query}%")) | (Trek.name.like(f"%{search_query}%")))
             
     if filter_status:
-        query = query.filter(Booking.status == filter_status)
+        query = query.filter(Booking.status.ilike(filter_status))
         
     bookings = query.order_by(Booking.booking_date.desc()).all()
     return render_template('admin/bookings.html', bookings=bookings, search_query=search_query, filter_status=filter_status)
@@ -548,6 +559,10 @@ def staff_update_trek(trek_id):
         flash('Access denied.', 'error')
         return redirect(url_for('staff_dashboard'))
         
+    if trek.status in ['Started', 'Completed']:
+        flash('This trek has already started or completed and cannot be updated.', 'error')
+        return redirect(url_for('staff_trek_detail', trek_id=trek.id))
+
     available_slots = int(request.form.get('available_slots'))
     status = request.form.get('status')
     
@@ -560,6 +575,13 @@ def staff_update_trek(trek_id):
         
     trek.available_slots = available_slots
     trek.status = status
+    if status == 'Completed':
+        trek.available_slots = 0
+        active_bookings = Booking.query.filter_by(trek_id=trek.id, status='Booked').all()
+        for booking in active_bookings:
+            booking.status = 'Completed'
+    elif status == 'Started':
+        trek.available_slots = 0
     db.session.commit()
     
     flash('Trek details updated successfully.', 'success')
@@ -574,6 +596,10 @@ def staff_start_trek(trek_id):
     if trek.staff_id != current_user.id:
         flash('Access denied.', 'error')
         return redirect(url_for('staff_dashboard'))
+        
+    if trek.status == 'Completed':
+        flash('This trek has already been completed.', 'error')
+        return redirect(url_for('staff_trek_detail', trek_id=trek.id))
         
     trek.status = 'Started'
     trek.available_slots = 0  # Close booking when trek starts
@@ -592,6 +618,10 @@ def staff_complete_trek(trek_id):
         flash('Access denied.', 'error')
         return redirect(url_for('staff_dashboard'))
         
+    if trek.status == 'Completed':
+        flash('This trek is already completed.', 'error')
+        return redirect(url_for('staff_trek_detail', trek_id=trek.id))
+
     trek.status = 'Completed'
     trek.available_slots = 0
     
@@ -626,11 +656,22 @@ def trekker_dashboard():
     treks = trek_query.all()
     
     # Get stats for current user
-    active_bookings_count = Booking.query.filter_by(user_id=current_user.id, status='Booked').count()
-    completed_bookings_count = Booking.query.filter_by(user_id=current_user.id, status='Completed').count()
+    active_bookings_count = Booking.query.join(Trek).filter(
+        Booking.user_id == current_user.id,
+        Booking.status == 'Booked',
+        Trek.status != 'Completed'
+    ).count()
+    completed_bookings_count = Booking.query.join(Trek).filter(
+        Booking.user_id == current_user.id,
+        (Booking.status == 'Completed') | (Trek.status == 'Completed')
+    ).count()
     
     # Active booking trek IDs to prevent duplicate booking
-    booked_trek_ids = [b.trek_id for b in Booking.query.filter_by(user_id=current_user.id, status='Booked').all()]
+    booked_trek_ids = [b.trek_id for b in Booking.query.join(Trek).filter(
+        Booking.user_id == current_user.id,
+        Booking.status == 'Booked',
+        Trek.status != 'Completed'
+    ).all()]
     
     return render_template(
         'trekker/dashboard.html', 
@@ -648,7 +689,11 @@ def trekker_bookings():
     if current_user.role != 'trekker':
         flash('Access denied.', 'error')
         return redirect(url_for('home'))
-    bookings = Booking.query.filter_by(user_id=current_user.id, status='Booked').order_by(Booking.booking_date.desc()).all()
+    bookings = Booking.query.join(Trek).filter(
+        Booking.user_id == current_user.id,
+        Booking.status == 'Booked',
+        Trek.status != 'Completed'
+    ).order_by(Booking.booking_date.desc()).all()
     return render_template('trekker/bookings.html', bookings=bookings)
 
 @app.route('/trekker/history')
@@ -657,9 +702,9 @@ def trekker_history():
     if current_user.role != 'trekker':
         flash('Access denied.', 'error')
         return redirect(url_for('home'))
-    bookings = Booking.query.filter(
+    bookings = Booking.query.join(Trek).filter(
         Booking.user_id == current_user.id, 
-        Booking.status.in_(['Cancelled', 'Completed'])
+        (Booking.status.in_(['Cancelled', 'Completed'])) | (Trek.status == 'Completed')
     ).order_by(Booking.booking_date.desc()).all()
     return render_template('trekker/history.html', bookings=bookings)
 
