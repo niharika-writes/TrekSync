@@ -194,17 +194,7 @@
                     delay: 4000
                 });
                 toast.show();
-                return toast;
             });
-
-            // Auto-refresh pages periodically to reflect real-time updates across tabs (e.g. 15 seconds)
-            {% if current_user.is_authenticated %}
-            setInterval(function() {
-                if (document.visibilityState === 'visible' && !document.activeElement.matches('input, textarea, select')) {
-                    window.location.reload();
-                }
-            }, 15000);
-            {% endif %}
         });
     </script>
     {% block scripts %}{% endblock %}

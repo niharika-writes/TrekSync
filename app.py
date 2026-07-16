@@ -434,6 +434,12 @@ def admin_edit_trek(trek_id):
             return render_template('admin/trek_form.html', approved_staff=approved_staff, trek=trek)
             
         # Slots adjustment logic
+        if trek.status == 'Completed' and status != 'Completed':
+            completed_bookings = Booking.query.filter_by(trek_id=trek.id, status='Completed').all()
+            for booking in completed_bookings:
+                booking.status = 'Booked'
+            db.session.flush()
+
         active_bookings_count = Booking.query.filter_by(trek_id=trek.id, status='Booked').count()
         if max_slots < active_bookings_count:
             flash(f'Cannot set max slots to {max_slots} because there are already {active_bookings_count} active bookings.', 'error')
@@ -635,9 +641,31 @@ def staff_complete_trek(trek_id):
     flash('Expedition marked as completed successfully. Participant records updated.', 'success')
     return redirect(url_for('staff_trek_detail', trek_id=trek.id))
 
+def sync_desynced_bookings():
+    try:
+        desynced_to_booked = Booking.query.join(Trek).filter(
+            Booking.status == 'Completed',
+            Trek.status != 'Completed'
+        ).all()
+        for b in desynced_to_booked:
+            b.status = 'Booked'
+            
+        desynced_to_completed = Booking.query.join(Trek).filter(
+            Booking.status == 'Booked',
+            Trek.status == 'Completed'
+        ).all()
+        for b in desynced_to_completed:
+            b.status = 'Completed'
+            
+        if desynced_to_booked or desynced_to_completed:
+            db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+
 @app.route('/trekker/dashboard')
 @login_required
 def trekker_dashboard():
+    sync_desynced_bookings()
     if current_user.role != 'trekker':
         flash('Access denied. Trekker role required.', 'error')
         return redirect(url_for('home'))
@@ -686,6 +714,7 @@ def trekker_dashboard():
 @app.route('/trekker/bookings')
 @login_required
 def trekker_bookings():
+    sync_desynced_bookings()
     if current_user.role != 'trekker':
         flash('Access denied.', 'error')
         return redirect(url_for('home'))
@@ -699,6 +728,7 @@ def trekker_bookings():
 @app.route('/trekker/history')
 @login_required
 def trekker_history():
+    sync_desynced_bookings()
     if current_user.role != 'trekker':
         flash('Access denied.', 'error')
         return redirect(url_for('home'))
