@@ -65,6 +65,12 @@ def register():
         contact_details = request.form.get('contact_details', '').strip()
         
         # Validation
+        if '@' not in username:
+            flash('Username must contain @.', 'error')
+            return render_template('register.html')
+        if not any(char.isupper() for char in username):
+            flash('Username must contain one upper case letter.', 'error')
+            return render_template('register.html')
         if not username or not email or not password or not confirm_password:
             flash('All required fields must be filled.', 'error')
             return render_template('register.html')
