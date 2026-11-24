@@ -36,7 +36,7 @@ with app.app_context():
             role='admin',
             is_active=True
         )
-        admin.set_password('admin123')
+        admin.set_password('niharika1234')
         db.session.add(admin)
         db.session.commit()
         print("Pre-existing Admin seeded: username='admin', password='admin123'")
